@@ -284,14 +284,14 @@ textarea{resize:vertical;min-height:75px}
 
   <div class="notice">
     Introduce tus claves de API para activar las funcionalidades. Solo se guardan en tu navegador.
-    Anthropic: <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> ·
+    Google Gemini: <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a> ·
     OpenAI (imágenes): <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a> ·
     ElevenLabs (sonido): <a href="https://elevenlabs.io" target="_blank">elevenlabs.io</a>
   </div>
 
   <div class="card">
     <div class="card-title">Claves de API</div>
-    <div class="field"><label>Anthropic (requerido)</label><input type="text" id="api-key" placeholder="sk-ant-api03-..."></div>
+    <div class="field"><label>Google Gemini (requerido)</label><input type="text" id="api-key" placeholder="AIzaSy..."></div>
     <div class="field"><label>OpenAI — imágenes DALL·E 3 <span style="color:var(--text3)">(opcional)</span></label><input type="text" id="oai-key" placeholder="sk-proj-..."></div>
     <div class="field"><label>ElevenLabs — sonido ambiental <span style="color:var(--text3)">(opcional)</span></label><input type="text" id="el-key" placeholder="sk_..."></div>
   </div>
@@ -727,34 +727,68 @@ function showScreen(id) {
 }
 
 // ═══════════════════════════════════════════
-//  ANTHROPIC API
-// ═══════════════════════════════════════════
-// ═══════════════════════════════════════════
-//  ANTHROPIC API
+//  GEMINI API
 // ═══════════════════════════════════════════
 async function callDM(systemPrompt, userMessage) {
-  G.context.push({ role:'user', content:userMessage });
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json','x-api-key':G.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-    body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system:systemPrompt, messages:G.context }),
+  // Gemini usa el formato 'user' y 'model', y la estructura 'parts: [{text: ...}]'
+  G.context.push({ role: 'user', parts: [{ text: userMessage }] });
+
+  const payload = {
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents: G.context,
+    generationConfig: {
+      // Forzamos a que Gemini devuelva siempre un JSON estructurado
+      responseMimeType: "application/json", 
+    }
+  };
+
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${G.apiKey}`, {    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
   });
-  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e?.error?.message||`HTTP ${res.status}`); }
+
   const data = await res.json();
-  const text = (data.content||[]).map(b=>b.text||'').join('');
-  G.context.push({ role:'assistant', content:text });
+  
+  if (!res.ok) { 
+    throw new Error(data.error?.message || `HTTP ${res.status}`); 
+  }
+
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  
+  // Guardamos la respuesta del modelo en el historial
+  G.context.push({ role: 'model', parts: [{ text: text }] });
+  
+  // Mantenemos el contexto en un límite manejable
   if (G.context.length > 24) G.context = G.context.slice(-24);
+  
   return text;
 }
 
 async function callOnce(prompt, maxTokens=200) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json','x-api-key':G.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-    body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:maxTokens, messages:[{ role:'user', content:prompt }] }),
+  const payload = {
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: {
+      maxOutputTokens: maxTokens
+    }
+  };
+
+  // Si detectamos que el prompt original pide un JSON (como al extraer personajes), lo forzamos
+  if (prompt.includes("JSON") || prompt.includes("json")) {
+    payload.generationConfig.responseMimeType = "application/json";
+  }
+
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${G.apiKey}`, {    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
   });
+
   const data = await res.json();
-  return (data.content||[]).map(b=>b.text||'').join('').trim();
+  
+  if (!res.ok) { 
+    throw new Error(data.error?.message || `HTTP ${res.status}`); 
+  }
+
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
 function parseJSON(raw) {
