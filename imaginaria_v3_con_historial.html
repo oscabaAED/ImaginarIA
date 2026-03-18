@@ -414,7 +414,7 @@ textarea{resize:vertical;min-height:75px}
     <div class="field"><label>Tu respuesta:</label><textarea id="player-response" placeholder="Describe qué hace o dice tu personaje..."></textarea></div>
     <div class="btn-row">
       <button class="btn btn-danger btn-sm" onclick="endGame()">Terminar</button>
-      <button class="btn btn-gold" onclick="submitResponse()">Enviar →</button>
+      <button class="btn btn-gold" id="send-btn" onclick="submitResponse()">Enviar →</button>
     </div>
     <div class="error" id="play-error"></div>
   </div>
@@ -508,10 +508,10 @@ const ACTIVITIES = [
     desc: 'Aventura estilo D&D con combates, objetos y decisiones',
     itemLabel: 'objeto',
     endTitle: '⚔ Fin de la aventura',
-    systemFn: (G) => `Eres un Dungeon Master creativo para ${G.players.length} jugadores: ${G.players.join(', ')}.
-Ambientación: ${G.setting}. Trama: ${G.plot || 'Una aventura épica llena de giros inesperados.'}.
+    systemFn: (G) => `Eres un Dungeon Master para ${G.players.length} jugadores: ${G.players.join(', ')}.
+Ambientación: ${G.setting}. Trama: ${G.plot || 'Una aventura épica.'}.
 Duración: ~${G.totalTurns} turnos. ${contentRules(G)}
-MECÁNICAS: Cada turno describe una situación y dirige una pregunta al jugador activo. Evalúa su respuesta: si es creativa/valiente otorga UN objeto útil. En combates o eventos especiales, todos pueden recibir recompensas.
+MECÁNICAS: Evalúa la respuesta del jugador activo. Otorga UN objeto mágico o arma ÚNICAMENTE si su idea es excepcionalmente creativa, brillante o si logra un "éxito crítico" (aprox. 15% de las veces). La gran mayoría de turnos NO debes dar recompensa (usa reward_item: null).
 ${jsonSchema('objeto mágico o arma')}`,
   },
   {
@@ -521,10 +521,10 @@ ${jsonSchema('objeto mágico o arma')}`,
     desc: 'La IA dirige una obra improvisada por actos',
     itemLabel: 'accesorio',
     endTitle: '🎭 Telón final',
-    systemFn: (G) => `Eres el director de una obra de teatro improvisada para ${G.players.length} actores: ${G.players.join(', ')}.
-Temática: ${G.setting}. Premisa: ${G.plot || 'Una historia dramática llena de giros y emociones.'}.
+    systemFn: (G) => `Eres el director de una obra improvisada para ${G.players.length} actores: ${G.players.join(', ')}.
+Temática: ${G.setting}. Premisa: ${G.plot || 'Una historia dramática.'}.
 La obra tiene ~${G.totalTurns} escenas. ${contentRules(G)}
-MECÁNICAS: Cada turno describe una escena, el contexto del personaje y pide al actor activo que improvise su parlamento o acción. Valora la actuación: si es expresiva y coherente con el personaje, entrega UN accesorio o elemento de atrezzo que puede usar después.
+MECÁNICAS: Valora la actuación. Si la improvisación es magistral y sorprende a todos (ocurre raramente), entrega UN accesorio de atrezzo especial. Si es una actuación normal, no des nada (reward_item: null).
 ${jsonSchema('accesorio de atrezzo')}`,
   },
   {
@@ -534,10 +534,9 @@ ${jsonSchema('accesorio de atrezzo')}`,
     desc: 'Retos y dinámicas grupales con temática elegida',
     itemLabel: 'punto / premio',
     endTitle: '🎉 ¡La fiesta termina!',
-    systemFn: (G) => `Eres el animador de una fiesta temática para ${G.players.length} participantes: ${G.players.join(', ')}.
-Temática: ${G.setting}. Concepto: ${G.plot || 'Una velada llena de retos divertidos y sorpresas.'}.
-La fiesta tiene ~${G.totalTurns} rondas de actividades. ${contentRules(G)}
-MECÁNICAS: Cada turno propón un reto o dinámica divertida al participante activo (adivinanza temática, mímica, reto de actuación, trivia...). Si lo supera con gracia y creatividad, dale UN punto o premio especial. En momentos especiales, toda la fiesta puede ganar.
+    systemFn: (G) => `Eres el animador de una fiesta para ${G.players.length} participantes: ${G.players.join(', ')}.
+Temática: ${G.setting}.
+MECÁNICAS: Propón retos. Otorga UN punto o premio especial SOLO si la resolución del reto es ridículamente divertida o perfecta. Sé muy estricto, los premios son raros.
 ${jsonSchema('punto o premio especial')}`,
   },
   {
@@ -547,11 +546,10 @@ ${jsonSchema('punto o premio especial')}`,
     desc: 'Resuelve un crimen entre los participantes',
     itemLabel: 'pista',
     endTitle: '🔍 El caso se cierra',
-    systemFn: (G) => `Eres el narrador de un misterio de asesinato para ${G.players.length} investigadores: ${G.players.join(', ')}.
-Escenario: ${G.setting}. Caso: ${G.plot || 'Un misterioso crimen ocurrido en circunstancias inexplicables.'}.
-La investigación tiene ~${G.totalTurns} turnos. ${contentRules(G)}
-MECÁNICAS ESPECIALES: Al inicio, asigna mentalmente un culpable y distribuye pistas falsas y verdaderas. Cada turno, describe una nueva escena o testimonio y pregunta al investigador activo cómo actúa (interroga a alguien, examina una pista, busca un lugar). Si su acción es perspicaz, dale UNA pista relevante. Mantén el suspense hasta el final.
-${jsonSchema('pista o evidencia')}`,
+    systemFn: (G) => `Eres el narrador de un misterio para ${G.players.length} investigadores: ${G.players.join(', ')}. Uno de ellos podría ser el culpable.
+Escenario: ${G.setting}. Caso: ${G.plot || 'Un crimen inexplicable.'}.
+MECÁNICAS: Cada turno describe un testimonio o escena. Otorga UNA pista real ÚNICAMENTE si el jugador hace una deducción brillante o examina el lugar exacto correcto (aprox. 20% de las veces). Si la acción es obvia o genérica, no des pistas (reward_item: null).
+${jsonSchema('pista clave o evidencia')}`,
   },
   {
     id: 'escape',
@@ -561,10 +559,9 @@ ${jsonSchema('pista o evidencia')}`,
     itemLabel: 'herramienta',
     endTitle: '🚪 ¡Escape completado!',
     systemFn: (G) => `Eres el narrador de un escape room para ${G.players.length} jugadores: ${G.players.join(', ')}.
-Sala/Escenario: ${G.setting}. Premisa: ${G.plot || 'Los jugadores están atrapados y deben resolver puzzles para escapar.'}.
-El escape tiene ~${G.totalTurns} turnos. ${contentRules(G)}
-MECÁNICAS: Cada turno describe un puzzle o cerrojo y pregunta al jugador activo cómo intenta resolverlo. Si la solución es lógica y creativa, dale UNA herramienta o fragmento de código que les acerca a la salida. Lleva la cuenta implícita del progreso hacia la escapatoria.
-${jsonSchema('herramienta o fragmento de código')}`,
+Sala: ${G.setting}. 
+MECÁNICAS: Otorga una herramienta o código ÚNICAMENTE si el jugador descifra de manera lógica un puzzle complejo. Las respuestas fáciles no reciben recompensa.
+${jsonSchema('herramienta o código')}`,
   },
   {
     id: 'custom',
@@ -573,13 +570,11 @@ ${jsonSchema('herramienta o fragmento de código')}`,
     desc: 'Define tú mismo el tipo de experiencia',
     itemLabel: 'recompensa',
     endTitle: '✨ Fin de la experiencia',
-    systemFn: (G) => `Eres el narrador de una experiencia colaborativa personalizada para ${G.players.length} participantes: ${G.players.join(', ')}.
-Tipo de experiencia: ${G.customActivity || 'experiencia narrativa colaborativa'}.
-Ambientación: ${G.setting}. Trama: ${G.plot || 'Una historia colaborativa llena de sorpresas.'}.
-Duración: ~${G.totalTurns} turnos. ${contentRules(G)}
-MECÁNICAS: Adapta el ritmo y los retos al tipo de experiencia descrita. Cada turno dirige una situación al participante activo y evalúa su respuesta. Otorga UNA recompensa temática si lo hace bien.
+    systemFn: (G) => `Eres el narrador de una experiencia para ${G.players.length} participantes: ${G.players.join(', ')}.
+Tipo: ${G.customActivity}. Ambientación: ${G.setting}.
+MECÁNICAS: Evalúa su respuesta. Otorga UNA recompensa temática de forma MUY restrictiva, solo ante acciones verdaderamente excepcionales.
 ${jsonSchema('recompensa temática')}`,
-  },
+  }
 ];
 
 function contentRules(G) {
@@ -593,6 +588,10 @@ function contentRules(G) {
   if (!f.romance)  rules.push('Evita contenido romántico o sexual.');
   if (!f.horror)   rules.push('Evita elementos de terror o gore.');
   if (!f.dark)     rules.push('Mantén un tono positivo, evita humor negro o temas oscuros.');
+  
+  // NUEVA REGLA DE REALISMO E INVENTARIO
+  rules.push('REGLA ESTRICTA DE REALISMO: Los jugadores son personajes mundanos o acordes a su contexto inicial. Tienen prohibido inventarse estatus de poder (ej. ser el presidente o el rey) si no cuadra con la historia. Además, NO pueden usar objetos, armas o herramientas que no estén explícitamente en su Inventario. Si un jugador intenta hacer algo irreal o usar un objeto que no tiene, haz que su acción fracase narrativamente de forma lógica.');
+  
   return rules.join(' ');
 }
 
@@ -702,13 +701,34 @@ function setDuration(d, el) {
   el.classList.add('selected');
 }
 
+// 1. Conservar los nombres si cambias el número de jugadores
 function renderNameInputs(n) {
   const grid = document.getElementById('player-names-grid');
+  
+  // Guardar lo que ya esté escrito para no borrarlo al añadir o quitar huecos
+  const existingNames = [];
+  if (grid) {
+    grid.querySelectorAll('input').forEach(inp => existingNames.push(inp.value));
+  }
+  
   grid.innerHTML = '';
   for (let i = 0; i < n; i++) {
     const inp = document.createElement('input');
-    inp.type = 'text'; inp.id = `pname-${i}`; inp.placeholder = `Participante ${i+1}`; inp.style.marginBottom = '0';
+    inp.type = 'text'; 
+    inp.id = `pname-${i}`; 
+    inp.placeholder = `Participante ${i+1}`; 
+    inp.style.marginBottom = '0';
+    
+    // Restaurar el nombre si existía
+    if (existingNames[i]) {
+      inp.value = existingNames[i];
+    }
     grid.appendChild(inp);
+  }
+  
+  // Refrescar las pastillas de personajes guardados
+  if (typeof renderSavedCharsPills === 'function') {
+    renderSavedCharsPills();
   }
 }
 
@@ -759,12 +779,17 @@ async function callDM(systemPrompt, userMessage) {
   G.context.push({ role: 'model', parts: [{ text: text }] });
   
   // Mantenemos el contexto en un límite manejable
-  if (G.context.length > 24) G.context = G.context.slice(-24);
+  // Al recortar, garantizamos que el primer mensaje siempre sea 'user'
+  // (Gemini rechaza con 400 si el historial empieza por 'model')
+  if (G.context.length > 24) {
+    G.context = G.context.slice(-24);
+    while (G.context.length && G.context[0].role !== 'user') G.context.shift();
+  }
   
   return text;
 }
 
-async function callOnce(prompt, maxTokens=200) {
+async function callOnce(prompt, maxTokens=200, forceJson=false) {
   const payload = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: {
@@ -772,8 +797,9 @@ async function callOnce(prompt, maxTokens=200) {
     }
   };
 
-  // Si detectamos que el prompt original pide un JSON (como al extraer personajes), lo forzamos
-  if (prompt.includes("JSON") || prompt.includes("json")) {
+  // Solo forzamos JSON cuando se pide explícitamente, no por detección de palabras
+  // (evita que el prompt del mapa SVG active este modo por contener "JSON" como ejemplo)
+  if (forceJson) {
     payload.generationConfig.responseMimeType = "application/json";
   }
 
@@ -792,7 +818,14 @@ async function callOnce(prompt, maxTokens=200) {
 }
 
 function parseJSON(raw) {
-  try { const m = raw.match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : null; } catch { return null; }
+  try {
+    // Intenta objeto JSON primero, luego array
+    const obj = raw.match(/\{[\s\S]*\}/);
+    if (obj) return JSON.parse(obj[0]);
+    const arr = raw.match(/\[[\s\S]*\]/);
+    if (arr) return JSON.parse(arr[0]);
+    return null;
+  } catch { return null; }
 }
 
 function getActivity() { return ACTIVITIES.find(a => a.id === G.activityId) || ACTIVITIES[0]; }
@@ -857,20 +890,33 @@ async function generateMap() {
   if (!['rol','murder','escape'].includes(G.activityId)) return;
   const mapCard = document.getElementById('map-card');
   mapCard.style.display = 'block';
-  const mapPrompt = `Genera un mapa SVG para la siguiente ambientación: "${G.setting}". Trama: "${G.plot||'aventura'}".
-INSTRUCCIONES: Devuelve SOLO el SVG, sin texto fuera. viewBox="0 0 500 320" width="100%" height="auto".
-Fondo oscuro (#1a1520). Incluye 5-8 lugares relevantes con símbolos simples y etiquetas serif en color claro (#e8e0f0 o #c9a84c).
-Añade caminos entre lugares. Estilo cartográfico antiguo. Sin gradientes complejos.`;
+  
+  const mapPrompt = `Actúa como un cartógrafo experto. Genera un mapa en código SVG puro para la siguiente ambientación: "${G.setting}". Trama: "${G.plot||'aventura'}".
+INSTRUCCIONES CRÍTICAS: 
+1. Devuelve ÚNICA Y EXCLUSIVAMENTE el código de la etiqueta <svg> hasta </svg>.
+2. NO incluyas markdown, ni comillas invertidas, ni explicaciones antes o después.
+3. El SVG debe tener: viewBox="0 0 500 320" width="100%" height="auto".
+4. Usa un fondo oscuro (ej: #1a1520).
+5. Dibuja 5-7 lugares clave con formas simples (círculos, cuadrados) y añade caminos conectándolos.
+6. Incluye etiquetas de texto (<text>) legibles y en color claro (#e8e0f0 o #c9a84c) para los nombres de los lugares.`;
+
   try {
     const raw = await callOnce(mapPrompt, 2000);
+    // Esta expresión regular extrae el SVG incluso si Gemini lo envuelve en markdown
     const svgMatch = raw.match(/<svg[\s\S]*<\/svg>/i);
+    
     if (svgMatch) {
       G.mapSVG = svgMatch[0];
       document.getElementById('map-container').innerHTML = G.mapSVG;
       const playMap = document.getElementById('play-map-container');
       if (playMap) playMap.innerHTML = G.mapSVG;
-    } else { mapCard.style.display = 'none'; }
-  } catch { mapCard.style.display = 'none'; }
+    } else { 
+      mapCard.style.display = 'none'; 
+    }
+  } catch (e) { 
+    console.error("Error al generar el mapa:", e);
+    mapCard.style.display = 'none'; 
+  }
 }
 
 function toggleMap() {
@@ -912,7 +958,7 @@ async function startAdventure() {
   G.apiKey  = document.getElementById('api-key').value.trim();
   G.oaiKey  = document.getElementById('oai-key').value.trim();
   G.elKey   = document.getElementById('el-key').value.trim();
-  if (!G.apiKey) { document.getElementById('setup-error').textContent = 'Introduce tu API Key de Anthropic.'; return; }
+  if (!G.apiKey) { document.getElementById('setup-error').textContent = 'Introduce tu API Key de Gemini.'; return; }
 
   G.customActivity = document.getElementById('custom-activity-desc').value.trim();
   const numEl = document.querySelector('#num-players-group .pill.selected');
@@ -941,15 +987,42 @@ async function startAdventure() {
   const el = document.getElementById('intro-narrative');
   el.textContent = 'Preparando tu experiencia...'; el.classList.add('loading');
 
-  // Fire everything in parallel
-  const [introRaw] = await Promise.allSettled([
+// Preparar el prompt para el equipo inicial
+  const equipPrompt = `Genera el equipo inicial para los siguientes personajes: ${G.players.join(', ')}. 
+  Ambientación: "${G.setting}".
+  Deben ser personajes coherentes con el entorno, sin estatus de poder absurdo.
+  Asigna a CADA jugador EXACTAMENTE 3 objetos: 
+  1. Un arma o herramienta defensiva básica.
+  2. Una posesión personal importante (afectiva o valiosa).
+  3. Un objeto misceláneo o de supervivencia.
+  
+  Responde ÚNICAMENTE con un JSON válido usando los nombres de los jugadores como claves y arrays de strings como valores. Ejemplo:
+  {"${G.players[0]}": ["Palo afilado", "Reloj roto de su abuelo", "Cuerda"]}`;
+
+  // Ejecutamos todo en paralelo para no añadir tiempo de carga
+  const [introRaw, coverRaw, mapRaw, equipRaw] = await Promise.allSettled([
     callDM(activity.systemFn(G),
       `Comienza la experiencia con una introducción vibrante (3-4 oraciones) que establezca el escenario y genere emoción. Luego plantea la primera situación al participante: ${G.players[0]}. Solo JSON.`),
     generateCoverImage(),
     generateMap(),
+    callOnce(equipPrompt, 500, true)
   ]);
 
   el.classList.remove('loading');
+  
+  // Asignar el equipo inicial si se generó correctamente
+  if (equipRaw.status === 'fulfilled') {
+    const equipParsed = parseJSON(equipRaw.value);
+    if (equipParsed) {
+      G.players.forEach(p => {
+        if (equipParsed[p] && Array.isArray(equipParsed[p])) {
+          G.inventory[p] = equipParsed[p];
+        }
+      });
+    }
+  }
+
+  // Cargar la introducción
   if (introRaw.status === 'fulfilled') {
     const p = parseJSON(introRaw.value);
     if (p) {
@@ -1003,6 +1076,11 @@ async function submitResponse() {
   const resp = document.getElementById('player-response').value.trim();
   if (!resp) { document.getElementById('play-error').textContent = 'Escribe tu respuesta.'; return; }
   document.getElementById('play-error').textContent = '';
+
+  // Deshabilitamos el botón inmediatamente para evitar envíos duplicados
+  const sendBtn = document.getElementById('send-btn');
+  if (sendBtn) sendBtn.disabled = true;
+
   const activity = getActivity();
   const cp = G.players[G.playerIdx];
   addLog(`${cp}: "${resp}"`);
@@ -1027,10 +1105,15 @@ async function submitResponse() {
     if (p?.image_prompt) generateSceneImage(p.image_prompt);
     if (G.elKey && p?.narration) playAmbientSound(p.narration);
     if (p?.is_final || isFinal) { setTimeout(()=>finishGame(p?.narration), 1200); return; }
-  } catch(e) { setNarrative('Error: ' + e.message, false); return; }
+  } catch(e) {
+    setNarrative('Error: ' + e.message, false);
+    if (sendBtn) sendBtn.disabled = false;
+    return;
+  }
   G.playerIdx = (G.playerIdx+1) % G.players.length;
   G.turn++;
   updateTurnUI(); renderInventory();
+  if (sendBtn) sendBtn.disabled = false;
 }
 
 // ═══════════════════════════════════════════
@@ -1045,7 +1128,7 @@ async function finishGame(finalNarr) {
     el.textContent = 'Generando el epílogo...'; el.classList.add('loading');
     try {
       const activity = getActivity();
-      const raw = await callOnce('Escribe un epílogo breve y memorable. JSON con is_final: true.');
+      const raw = await callOnce('Escribe un epílogo breve y memorable. JSON con is_final: true.', 200, true);
       const p = parseJSON(raw);
       el.classList.remove('loading'); el.textContent = p ? p.narration : raw;
     } catch { el.classList.remove('loading'); el.textContent = 'La experiencia ha llegado a su fin.'; }
@@ -1113,11 +1196,39 @@ function flashReward(msg) {
   t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 4500);
 }
 function renderInventory() {
-  const grid = document.getElementById('inventory-grid'); grid.innerHTML = '';
-  G.players.forEach(p => {
-    const items = G.inventory[p]||[];
-    const d = document.createElement('div'); d.className = 'player-inv';
-    d.innerHTML = `<div class="player-inv-name">${p}</div><div>${items.length?items.map(i=>`<span class="item-tag">${i}</span>`).join(''):'<span class="no-items">—</span>'}</div>`;
+  const grid = document.getElementById('inventory-grid'); 
+  grid.innerHTML = '';
+  
+  // Define en qué juegos los inventarios deben ser secretos
+  const modosSecretos = ['murder', 'escape']; 
+  const esModoSecreto = modosSecretos.includes(G.activityId);
+
+  G.players.forEach((p, index) => {
+    const items = G.inventory[p] || [];
+    const esTurnoActual = index === G.playerIdx;
+    
+    const d = document.createElement('div'); 
+    d.className = 'player-inv';
+    
+    // Resaltar visualmente el inventario del jugador actual
+    if (esTurnoActual) {
+      d.style.borderColor = 'var(--purple2)';
+      d.style.boxShadow = '0 0 10px rgba(124,92,191,0.15)';
+    }
+
+    let inventarioHTML = '<span class="no-items">—</span>';
+
+    if (esModoSecreto && !esTurnoActual) {
+      // Ocultar objetos si es modo secreto y no es su turno
+      if (items.length > 0) {
+        inventarioHTML = `<span class="no-items">🔒 Oculto (${items.length})</span>`;
+      }
+    } else if (items.length > 0) {
+      // Mostrar objetos normalmente
+      inventarioHTML = items.map(i => `<span class="item-tag">${i}</span>`).join('');
+    }
+
+    d.innerHTML = `<div class="player-inv-name">${p}</div><div>${inventarioHTML}</div>`;
     grid.appendChild(d);
   });
 }
@@ -1161,6 +1272,10 @@ function goChars() {
 //  GUARDAR SESIÓN
 // ═══════════════════════════════════════════
 function saveSessionToHistory() {
+  // Deshabilitamos el botón inmediatamente para evitar guardados duplicados
+  const btn = document.getElementById('save-session-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '✓ Guardado'; }
+
   const epilogue = document.getElementById('end-narrative').textContent.trim();
   const activity = getActivity();
   const session = {
@@ -1180,9 +1295,7 @@ function saveSessionToHistory() {
   sessions.unshift(session);
   if (sessions.length > 50) sessions.pop();
   saveSessions(sessions);
-  const btn = document.getElementById('save-session-btn');
-  btn.textContent = '✓ Guardado';
-  btn.disabled = true;
+  // (botón ya deshabilitado al inicio de la función)
   document.getElementById('save-status').textContent = 'Sesión guardada en el historial.';
 }
 
@@ -1206,7 +1319,7 @@ Devuelve SOLO un array JSON (sin texto fuera del JSON):
 [{"name":"...","desc":"Descripción del personaje, su rol y rasgos en 1-2 frases.","tag":"Tipo/Clase","origin":"${G.setting.slice(0,30)}"}]
 Incluye jugadores y NPCs relevantes con nombre. No incluyas personajes sin nombre.`;
   try {
-    const raw = await callOnce(prompt, 800);
+    const raw = await callOnce(prompt, 800, true);
     const match = raw.match(/\[[\s\S]*\]/);
     if (!match) throw new Error('Sin personajes detectados');
     const extracted = JSON.parse(match[0]);
@@ -1215,7 +1328,7 @@ Incluye jugadores y NPCs relevantes con nombre. No incluyas personajes sin nombr
     let added = 0;
     extracted.forEach(c => {
       if (c.name && !existingNames.has(c.name.toLowerCase())) {
-        existing.unshift({ id: Date.now() + Math.random(), ...c });
+        existing.unshift({ id: Date.now() * 1000 + Math.floor(Math.random() * 1000), ...c });
         added++;
       }
     });
@@ -1282,7 +1395,9 @@ function replaySession(id, e) {
   const s = loadSessions().find(s => s.id === id);
   if (!s) return;
   goSetup();
-  setTimeout(() => {
+  // Doble rAF garantiza que el DOM ha renderizado antes de manipularlo,
+  // más fiable que un setTimeout fijo especialmente en dispositivos lentos
+  requestAnimationFrame(() => requestAnimationFrame(() => {
     document.getElementById('setting-input').value = s.setting || '';
     document.getElementById('plot-input').value    = s.plot    || '';
     ACTIVITIES.forEach(a => { if (a.name === s.activity) selectActivity(a.id); });
@@ -1292,7 +1407,7 @@ function replaySession(id, e) {
     });
     renderNameInputs(n);
     s.players.forEach((name, i) => { const inp = document.getElementById(`pname-${i}`); if (inp) inp.value = name; });
-  }, 80);
+  }));
 }
 
 // ═══════════════════════════════════════════
@@ -1355,23 +1470,41 @@ function renderSavedCharsPills() {
     </span>`).join('');
 }
 
+// 2. Insertar personaje y crear hueco nuevo automáticamente si hace falta
 function insertCharName(name, pill) {
-  const inputs = document.querySelectorAll('#player-names-grid input');
-  for (const inp of inputs) {
-    if (!inp.value.trim()) {
-      inp.value = name;
-      pill.classList.add('used');
-      setTimeout(() => pill.classList.remove('used'), 1200);
+  const inputs = Array.from(document.querySelectorAll('#player-names-grid input'));
+  
+  // Busca el primer campo vacío
+  let targetInput = inputs.find(inp => !inp.value.trim()); 
+  
+  // Si no hay campos vacíos, intentamos añadir un jugador más (máximo 6)
+  if (!targetInput) {
+    if (inputs.length < 6) {
+      const newTotal = inputs.length + 1;
+      
+      // Mover el selector visual al nuevo número de jugadores
+      document.querySelectorAll('#num-players-group .pill').forEach(p => {
+        p.classList.toggle('selected', parseInt(p.textContent) === newTotal);
+      });
+      
+      // Crear los nuevos campos (se conservan los anteriores)
+      renderNameInputs(newTotal);
+      
+      // Seleccionar el nuevo campo que acabamos de crear
+      targetInput = document.getElementById(`pname-${newTotal - 1}`);
+    } else {
+      // Si ya hay 6 jugadores llenos, mostramos error visual
+      pill.style.borderColor = 'var(--red)';
+      setTimeout(() => pill.style.borderColor = '', 900);
       return;
     }
   }
-  pill.style.borderColor = 'var(--red)';
-  setTimeout(() => pill.style.borderColor = '', 900);
+  
+  // Insertar el nombre en el campo destino y dar feedback visual
+  targetInput.value = name;
+  pill.classList.add('used');
+  setTimeout(() => pill.classList.remove('used'), 1200);
 }
-
-// Patch renderNameInputs to also refresh character pills
-const _origRNI = renderNameInputs;
-function renderNameInputs(n) { _origRNI(n); renderSavedCharsPills(); }
 
 // Init on load
 renderSavedCharsPills();
