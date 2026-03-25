@@ -1,11 +1,11 @@
-# IMAGINARIA ✦
+# IMAGINARIA 
 ### Experiencias narrativas colaborativas con Inteligencia Artificial
 
-Imaginaria es una aplicación web de una sola página (HTML autocontenido, sin dependencias externas) que convierte a una IA en director de juego para partidas de rol, murder mystery, escape room, obra de teatro y fiestas temáticas. No requiere instalación: basta con abrir el archivo en un navegador.
+Imaginaria es una aplicación web de una sola página (HTML autocontenido, sin dependencias externas) que utiliza a una IA para que haga el papel de director de juego para partidas de rol, murder mystery, escape room, obra de teatro y fiestas temáticas. No requiere instalación, pero si es necesario disponer de claves de acceso a ciertas APIs para poder usar las diferentes funcionalidades.
 
 ---
 
-## ✨ Funcionalidades
+## Funcionalidades
 
 | Función | Descripción |
 |---|---|
@@ -13,7 +13,7 @@ Imaginaria es una aplicación web de una sola página (HTML autocontenido, sin d
 | 🤖 **Narración con IA** | Google Gemini actúa como DM/narrador con memoria de contexto |
 | 🎨 **Imágenes generadas** | Portada, escenas y retrato del grupo vía Pollinations.AI |
 | 🗺️ **Mapa del mundo** | Mapa ilustrado generado al inicio de la partida |
-| 🎙️ **Reconocimiento de voz** | Dicta tu respuesta con el micrófono (Chrome/Edge) |
+| 🎙️ **Reconocimiento de voz** | Dicta tu respuesta con el micrófono (solo para Chrome/Edge) |
 | 🎵 **Sonido ambiental** | ElevenLabs genera efectos de sonido en cada escena |
 | 📜 **Historial** | Las sesiones terminadas se guardan en el navegador |
 | 🧙 **Personajes guardados** | Biblioteca de personajes reutilizables entre partidas |
@@ -22,7 +22,7 @@ Imaginaria es una aplicación web de una sola página (HTML autocontenido, sin d
 
 ---
 
-## 🚀 Inicio rápido
+## Inicio rápido
 
 ### Opción A — Abrir directamente
 Descarga `imaginaria_voice.html` y ábrelo en **Chrome** o **Edge**.
@@ -33,17 +33,9 @@ Descarga `imaginaria_voice.html` y ábrelo en **Chrome** o **Edge**.
 3. Ve a **Settings → Pages → Deploy from branch → main**
 4. Tu app estará en `https://TU_USUARIO.github.io/REPO/`
 
-### Opción C — Servidor local con FastAPI
-```bash
-pip install -r requirements.txt
-cp imaginaria_voice.html static/imaginaria.html
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-# → http://localhost:8000
-```
-
 ---
 
-## 🔑 Claves de API
+## Claves de API
 
 Todas las claves se introducen en la pantalla de configuración y se guardan únicamente en el navegador (`localStorage`). No se envían a ningún servidor propio.
 
@@ -57,19 +49,19 @@ Todas las claves se introducen en la pantalla de configuración y se guardan ún
 
 ---
 
-## 🎮 Cómo jugar
+## Cómo jugar
 
-1. **Configura** el tipo de experiencia, número de jugadores y ambientación
+1. **Configura** el tipo de experiencia, número de jugadores, la ambientación y la premisa principal de la historia
 2. **Introduce** los nombres de los participantes (o usa personajes guardados)
-3. **Ajusta** los filtros de contenido según el público
-4. Pulsa **✦ Comenzar experiencia** — la IA genera la intro y la portada
+3. **Ajusta** los filtros de contenido según el público al que vaya dirigido
+4. Pulsa **Comenzar experiencia** — la IA genera la intro y la portada
 5. Cada jugador por turnos describe qué hace su personaje (texto o voz 🎙)
-6. La IA narra las consecuencias y avanza la historia
-7. Al terminar, se genera un epílogo y puedes guardar la sesión
+6. La IA narra las consecuencias y hace avanzar la historia
+7. Al terminar, se genera un epílogo y puedes guardar la sesión y los personajes creados
 
 ---
 
-## 🎙️ Reconocimiento de voz
+## Reconocimiento de voz
 
 Disponible en **Chrome y Edge** (requiere HTTPS en producción, por eso GitHub Pages es ideal).
 
@@ -81,7 +73,7 @@ En Firefox el botón aparece desactivado con un aviso informativo.
 
 ---
 
-## 🛠️ Tecnologías
+## Tecnologías
 
 - **Frontend:** HTML5 + CSS3 + JavaScript vanilla (sin frameworks)
 - **IA narrativa:** Google Gemini 2.5 Flash (`gemini-2.5-flash`)
@@ -93,7 +85,7 @@ En Firefox el botón aparece desactivado con un aviso informativo.
 
 ---
 
-## ⚙️ Modos de juego en detalle
+## Modos de juego en detalle
 
 | Modo | Mecánica principal | Recompensas |
 |---|---|---|
@@ -106,7 +98,7 @@ En Firefox el botón aparece desactivado con un aviso informativo.
 
 ---
 
-## 📋 Requisitos del navegador
+## Requisitos del navegador
 
 | Función | Chrome | Edge | Firefox | Safari |
 |---|---|---|---|---|
@@ -116,6 +108,6 @@ En Firefox el botón aparece desactivado con un aviso informativo.
 
 ---
 
-## 📄 Licencia
+## Licencia
 
 Proyecto personal de uso libre. Las APIs de terceros están sujetas a sus propios términos de servicio.
