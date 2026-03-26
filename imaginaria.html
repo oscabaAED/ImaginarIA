@@ -285,7 +285,7 @@ textarea{resize:vertical;min-height:75px}
   <div class="notice">
   Introduce tus claves de API para activar las funcionalidades. Solo se guardan en tu navegador.
     Google Gemini: <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a> ·
-    Imágenes: <a href="https://pollinations.ai" target="_blank">Pollinations.AI</a> (gratuito, sin clave) ·
+    Imágenes: <a href="https://enter.pollinations.ai" target="_blank">Pollinations.AI</a> (gratuito · clave opcional en enter.pollinations.ai) ·
     ElevenLabs (sonido): <a href="https://elevenlabs.io" target="_blank">elevenlabs.io</a>
   </div>
 
@@ -293,8 +293,12 @@ textarea{resize:vertical;min-height:75px}
   <div class="card">
     <div class="card-title">Claves de API</div>
     <div class="field"><label>Google Gemini (requerido)</label><input type="text" id="api-key" placeholder="AIzaSy..."></div>
-    <div class="field"><label>Imágenes — Pollinations.AI <span style="color:var(--text3)">(gratuito · sin clave · automático)</span></label>
-      <div style="font-size:13px;color:var(--text2);background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;margin-bottom:14px">✓ Las imágenes se generan con <strong style="color:var(--gold)">Pollinations.AI</strong>, un servicio gratuito que no requiere registro ni clave. Las imágenes son públicas en su plataforma.</div>
+    <div class="field">
+      <label>Pollinations.AI — clave de imagen <span style="color:var(--text3)">(opcional · mejora velocidad y fiabilidad)</span></label>
+      <input type="text" id="poll-key" placeholder="pk_... (recomendado para evitar errores de carga)">
+      <div style="font-size:12px;color:var(--text3);margin-top:-10px;margin-bottom:14px">
+        Sin clave funciona pero puede ser lento o fallar. Clave gratuita en <a href="https://enter.pollinations.ai" target="_blank" style="color:var(--purple2)">enter.pollinations.ai</a> → empieza por <span style="color:var(--gold)">pk_</span>.
+      </div>
     </div>
     <div class="field"><label>ElevenLabs — sonido ambiental <span style="color:var(--text3)">(opcional)</span></label><input type="text" id="el-key" placeholder="sk_..."></div>
   </div>
@@ -666,7 +670,7 @@ const FILTERS_DEF = [
 const DURATION_TURNS = { 5:5, 10:8, 20:14, 30:20 };
 
 let G = {
-  apiKey:'', oaiKey:'', elKey:'',
+  apiKey:'', oaiKey:'', elKey:'', pollKey:'',
   activityId:'rol', customActivity:'',
   players:[], setting:'', plot:'',
   duration:5, totalTurns:5,
@@ -886,13 +890,14 @@ function buildPollinationsUrl(prompt, style, width=1024, height=576) {
   const fullPrompt = `${style}: ${prompt}. No text or letters in image.`;
   const encoded    = encodeURIComponent(fullPrompt.slice(0, 500));
   const seed       = Math.floor(Math.random() * 999999);
-  // nologo=true requiere cuenta — lo omitimos para el tier gratuito anónimo
-  return `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&model=flux&referrer=imaginaria`;
+  let url = `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&model=flux&referrer=imaginaria`;
+  if (G.pollKey) url += `&key=${encodeURIComponent(G.pollKey)}`;
+  return url;
 }
 
 // Carga una URL de imagen y devuelve una Promise que resuelve con la URL
-// o rechaza tras un timeout (por defecto 60 s, Pollinations puede tardar)
-function loadImage(url, timeoutMs = 90000) {
+// o rechaza tras un timeout (por defecto 120 s, Pollinations puede tardar)
+function loadImage(url, timeoutMs = 120000) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const timer = setTimeout(() => reject(new Error('timeout')), timeoutMs);
@@ -902,6 +907,19 @@ function loadImage(url, timeoutMs = 90000) {
   });
 }
 
+// Reintenta hasta maxRetries veces generando una URL nueva (seed distinto) cada intento
+async function loadImageWithRetry(promptFn, maxRetries = 2, timeoutMs = 120000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const url = promptFn();
+      await loadImage(url, timeoutMs);
+      return url;
+    } catch (e) {
+      if (attempt === maxRetries) throw e;
+    }
+  }
+}
+
 async function generateCoverImage() {
   const coverWrap    = document.getElementById('cover-wrap');
   const coverLoading = document.getElementById('cover-loading');
@@ -909,12 +927,17 @@ async function generateCoverImage() {
 
   const activity = getActivity();
   const prompt   = `${activity.name} scene: ${G.setting}. ${G.plot || ''}`.slice(0, 200);
-  const url      = buildPollinationsUrl(prompt, 'epic cinematic wide shot illustration, rich colors, dramatic lighting');
+  const style    = 'epic cinematic wide shot illustration, rich colors, dramatic lighting';
 
   coverLoading.innerHTML = '🎨 Generando portada con IA… (puede tardar ~30 s)';
 
+  const showCoverError = () => {
+    coverLoading.innerHTML = `⚠ No se pudo cargar la imagen de portada.
+      <br><br><button class="btn btn-sm" style="margin-top:6px" onclick="generateCoverImage()">↺ Reintentar</button>`;
+  };
+
   try {
-    await loadImage(url);
+    const url = await loadImageWithRetry(() => buildPollinationsUrl(prompt, style), 2, 120000);
     G.coverUrl = url;
     const img   = document.createElement('img');
     img.src     = url; img.alt = 'Portada';
@@ -928,7 +951,7 @@ async function generateCoverImage() {
     document.getElementById('end-cover-img').src = url;
     endCover.style.display = 'block';
   } catch {
-    coverLoading.textContent = '⚠ No se pudo cargar la imagen de portada.';
+    showCoverError();
   }
 }
 
@@ -1039,6 +1062,7 @@ async function startAdventure() {
   document.getElementById('setup-error').textContent = '';
   G.apiKey  = document.getElementById('api-key').value.trim();
   G.oaiKey  = '';  // Pollinations no necesita clave
+  G.pollKey = document.getElementById('poll-key').value.trim();
   G.elKey   = document.getElementById('el-key').value.trim();
   if (!G.apiKey) { document.getElementById('setup-error').textContent = 'Introduce tu API Key de Gemini.'; return; }
 
