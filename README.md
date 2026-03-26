@@ -25,13 +25,10 @@ Imaginaria es una aplicación web de una sola página (HTML autocontenido, sin d
 ## Inicio rápido
 
 ### Opción A — Abrir directamente
-Descarga `imaginaria_voice.html` y ábrelo en **Chrome** o **Edge**.
+Descarga `imaginaria.html` y ábrelo en **Chrome** o **Edge**.
 
-### Opción B — GitHub Pages (recomendado)
-1. Crea un repositorio público en GitHub
-2. Sube el archivo renombrado como `index.html`
-3. Ve a **Settings → Pages → Deploy from branch → main**
-4. Tu app estará en `https://TU_USUARIO.github.io/REPO/`
+### Opción B — GitHub Pages
+También puedes acceder a ImaginarIA desde el siguiente enlace: `https://oscabaaed.github.io/ImaginarIA/`.
 
 ---
 
