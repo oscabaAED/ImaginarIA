@@ -28,7 +28,7 @@ Imaginaria es una aplicación web de una sola página (HTML autocontenido, sin d
 Descarga `imaginaria.html` y ábrelo en **Chrome** o **Edge**.
 
 ### Opción B — GitHub Pages
-También puedes acceder a ImaginarIA desde el siguiente enlace: [ImaginarIA](https://oscabaaed.github.io/ImaginarIA/).
+También puedes acceder a ImaginarIA desde el siguiente enlace: [oscabaaed.github.io/ImaginarIA/](https://oscabaaed.github.io/ImaginarIA/).
 
 ---
 
