@@ -1,4 +1,7 @@
 # IMAGINARIA 
+
+**Autores: Óscar Camacho Barreda y Juan Alcaraz Otón**
+
 ### Experiencias narrativas colaborativas con Inteligencia Artificial
 
 Imaginaria es una aplicación web de una sola página (HTML autocontenido, sin dependencias externas) que utiliza a una IA para que haga el papel de director de juego para partidas de rol, murder mystery, escape room, obra de teatro y fiestas temáticas. No requiere instalación, pero si es necesario disponer de claves de acceso a ciertas APIs para poder usar las diferentes funcionalidades.
